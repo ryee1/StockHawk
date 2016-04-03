@@ -6,10 +6,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 
+import com.sam_chordas.android.stockhawk.events.HistoricalDataEvent;
 import com.squareup.okhttp.OkHttpClient;
 
-import org.json.JSONException;
-import org.json.JSONObject;
+import org.greenrobot.eventbus.EventBus;
+import org.json.JSONArray;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -24,13 +25,19 @@ import java.util.ArrayList;
  */
 public class PlotIntentService extends IntentService {
 
-    public static final String EXTRA_SYMBOL_PLOTINTENTSERVICE = "extra_symbol_plotintentservice";
+    public static final String EXTRA_STARTDATE = "extra_startdate_plotintentservice";
+    public static final String EXTRA_ENDDATE = "extra_enddate_plotintentservice";
+    public static final String EXTRA_SYMBOL = "extra_symbol_plotintentservice";
     private static final String LOG_TAG = PlotIntentService.class.getSimpleName();
     private OkHttpClient client = new OkHttpClient();
-    public static Intent newIntent(Context context, String symbol){
+
+    public static Intent newIntent(Context context, String symbol, String startDate, String endDate) {
         return new Intent(context, PlotIntentService.class)
-                .putExtra(EXTRA_SYMBOL_PLOTINTENTSERVICE, symbol);
+                .putExtra(EXTRA_SYMBOL, symbol)
+                .putExtra(EXTRA_STARTDATE, startDate)
+                .putExtra(EXTRA_ENDDATE, endDate);
     }
+
     public PlotIntentService() {
         super("StockPlotService");
     }
@@ -38,10 +45,11 @@ public class PlotIntentService extends IntentService {
     @Override
     protected void onHandleIntent(Intent intent) {
         ArrayList<ContentProviderOperation> list = new ArrayList<>();
-        String symbol = intent.getStringExtra(EXTRA_SYMBOL_PLOTINTENTSERVICE);
+        String symbol = intent.getStringExtra(EXTRA_SYMBOL);
+        String startDate = intent.getStringExtra(EXTRA_STARTDATE);
+        String endDate = intent.getStringExtra(EXTRA_ENDDATE);
         String url, response;
-        String startDate = "2013-09-03";
-        String endDate = startDate;
+        JSONArray resultArray;
         StringBuilder urlStringBuilder = new StringBuilder();
         try {
             urlStringBuilder.append("https://query.yahooapis.com/v1/public/yql?q=");
@@ -53,20 +61,11 @@ public class PlotIntentService extends IntentService {
             url = urlStringBuilder.toString();
             try {
                 response = UtilsService.fetchData(client, url);
-                try {
-                    Log.e(LOG_TAG, url);
-                    JSONObject jsonObject = new JSONObject(response);
-                    jsonObject = jsonObject.getJSONObject("query")
-                            .getJSONObject("results")
-                            .getJSONObject("quote");
-                    Log.e(LOG_TAG, jsonObject.getString("Close"));
-                } catch (JSONException e) {
-                    Log.e(LOG_TAG, "Failed to connect to JsonObject: " + e.getMessage());
-                }
+                EventBus.getDefault().post(new HistoricalDataEvent(response));
             } catch (UnsupportedEncodingException e) {
                 e.printStackTrace();
             }
-        }catch(IOException e){
+        } catch (IOException e) {
             Log.e(LOG_TAG, "Failed to grab json data: " + e.getMessage());
         }
     }

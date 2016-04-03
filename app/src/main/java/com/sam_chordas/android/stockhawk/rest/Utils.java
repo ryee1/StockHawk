@@ -58,7 +58,9 @@ public class Utils {
     bidPrice = String.format("%.2f", Float.parseFloat(bidPrice));
     return bidPrice;
   }
-
+  public static Float truncateBidPricetoFloat(String bidPrice){
+    return Float.parseFloat(bidPrice);
+  }
   public static String truncateChange(String change, boolean isPercentChange){
     String weight = change.substring(0,1);
     String ampersand = "";
