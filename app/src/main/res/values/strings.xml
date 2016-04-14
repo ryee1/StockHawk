@@ -14,4 +14,5 @@
     <string name="add_widget">Add widget</string>
   <string name="widget_stocks_title">Stocks</string>
   <string name="toast_stock_already_saved">This stock is already saved!</string>
+  <string name="fab_add_stock_content_description">Add a new stock to the list</string>
 </resources>
